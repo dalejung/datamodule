@@ -7,14 +7,13 @@ from util import _get_di_vars
 
 # http://www.python.org/dev/peps/pep-0302/
 
-_CACHE = {}
-
 class DataModuleLoader(imputil.Importer):
-    def __init__(self, fullname, path):
+    def __init__(self, fullname, path, cache_manager):
         self.fullname = fullname
         self.path = path
         mname = fullname.rpartition('.')[-1]
         self.mname = mname
+        self.cache_manager = cache_manager
 
     def load_module(self, fullname):
         """
@@ -39,44 +38,30 @@ class DataModuleLoader(imputil.Importer):
         code = compile(code, pathname, 'exec')
         mod = self.new_module()
         ns = {}
+
         # populate namespace with cache vars
         ns.update(cache)
         ns['__datastore__'] = cache
+
+        # execute module with cache-hot namespace
         exec code in ns
+        # Transfer vars to module dict. 
+        # Note: The reason we executed in a dict is that 
+        # mod.__dict__ comes standard with module specific vars
         mod.__dict__.update(ns)
 
         # SAVE CACHE
         ns = self._clean_vars(ns)
-        self.save_cache(ns, config)
+        cache.sync(ns)
         return mod
 
     def _cache_key(self, fullname, config):
         custom_key = config.get('DATAMODULE_CACHE_KEY', None)
         return custom_key or fullname
 
-    def _load_cache(self, cache_key):
-        # in process cache
-        cache = _CACHE.get(cache_key, None)
-        return cache
-
-    # in process cache
     def load_cache(self, cache_key, config=None):
-        cache = self._load_cache(cache_key)
-        if cache is None:
-            cache = {}
-            self._save_cache(cache_key, cache)
+        cache = self.cache_manager.get(cache_key)
         return cache
-
-    def _save_cache(self, cache_key, cache):
-        _CACHE[cache_key] = cache
-
-    def save_cache(self, vars, config):
-        cache_key = self._cache_key(self.fullname, config)
-        # save to in process
-        cache = self.load_cache(cache_key)
-        cache.clear()
-        cache.update(vars)
-        self._save_cache(cache_key, cache)
 
     def _clean_vars(self, vars):
         """
@@ -88,14 +73,25 @@ class DataModuleLoader(imputil.Importer):
                 if not isinstance(v, SKIP_TYPES)}
         vars.pop('__builtins__', None)
         vars.pop('__datastore__', None)
+        # remove DATAMODULE vars
+        for k in vars.keys():
+            if k.startswith('DATAMODULE_'):
+                vars.pop(k)
         return vars
 
     def process_ast(self, code, config, cache):
+        """
+        Preprocesses the AST before being executed in module scope. 
+
+        For now all this does is remove ast.Assign nodes that 
+        are already in cache.
+        """
         new_body = skip_nodes_in_cache(code.body, cache)
         code.body = new_body
         return code
 
     def new_module(self):
+        """ create a new module object """
         mname = self.mname
         mod = imp.new_module(mname)
         mod.__path__ = self.path
@@ -103,8 +99,10 @@ class DataModuleLoader(imputil.Importer):
 
 
 def skip_nodes_in_cache(nodes, cache):
-    # remove the assign statements that were gotten 
-    # from cache
+    """
+    remove the assign statements that were gotten 
+    from cache
+    """
     new_body = []
     for node in nodes:
         res = _skip_node(node, cache)

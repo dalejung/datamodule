@@ -30,8 +30,9 @@ class DataModuleFinder(object):
     Handles checking for datamodules and loading if necessary.
     Otherwise, let regualr import machinery handle module
     """
-    def __init__(self, loader_class):
+    def __init__(self, loader_class, cache_manager):
         self.loader_class = loader_class
+        self.cache_manager = cache_manager
  
     def find_module(self, fullname, path=None):
         """
@@ -41,7 +42,7 @@ class DataModuleFinder(object):
         is_datamod = _is_datamodule(mname, path)
         # this is a datamodule, load it with our loaderclass
         if is_datamod:
-            loader = self.loader_class(fullname, path)
+            loader = self.loader_class(fullname, path, cache_manager=self.cache_manager)
             return loader
         # not datamodule, punt to regular import process
         return None
