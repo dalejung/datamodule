@@ -85,6 +85,7 @@ Warning
 
 * Look, if this feels wrong you're probably not wrong. The code is fairly simple. Please read it so you know what's going on in the background.
 * Beware of `from xyz import *` in datamodules. This will flood the module namespace with variables you probably don't want to cache. If you absolutely requires this, override the `DMCache.sync` method and explicitly skip those modules. Something like this:
+
 ```python
 if k in dir(some_star_module) and v is getattr(some_star_module, k):
     continue
