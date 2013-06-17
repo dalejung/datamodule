@@ -11,35 +11,39 @@ Example
 
 **data.py**
 
-    # required flag
-    DATAMODULE_ENABLED = True
+```python
+# required flag
+DATAMODULE_ENABLED = True
 
-    v1 = 1
-    v2 = 2
-    v3 = 3
-    v4 = 4
+v1 = 1
+v2 = 2
+v3 = 3
+v4 = 4
 
-    vlist = range(10)
+vlist = range(10)
 
-    ts = datetime.now()
+ts = datetime.now()
 
-    # for loop will not cache
-    for x in [1]:
-        non_caching = datetime.now()
+# for loop will not cache
+for x in [1]:
+    non_caching = datetime.now()
+```
 
 **analysis.py**
 
-    import datamodule
-    datamodule.install_datamodule()
+```python
+import datamodule
+datamodule.install_datamodule()
 
-    import data as fd
-    old_ts = fd.ts
-    old_nc = fd.non_caching
-    import data as fd
-    # non caching should rerun
-    assert old_nc != fd.non_caching
-    # ts should be cached
-    assert old_ts is fd.ts
+import data as fd
+old_ts = fd.ts
+old_nc = fd.non_caching
+import data as fd
+# non caching should rerun
+assert old_nc != fd.non_caching
+# ts should be cached
+assert old_ts is fd.ts
+```
 
 datamodule variables
 --------------------
