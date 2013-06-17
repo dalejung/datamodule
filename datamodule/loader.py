@@ -8,12 +8,13 @@ from util import _get_di_vars
 # http://www.python.org/dev/peps/pep-0302/
 
 class DataModuleLoader(imputil.Importer):
-    def __init__(self, fullname, path, cache_manager):
+    def __init__(self, fullname, path, cache_manager, verbose=True):
         self.fullname = fullname
         self.path = path
         mname = fullname.rpartition('.')[-1]
         self.mname = mname
         self.cache_manager = cache_manager
+        self.verbose = verbose
 
     def load_module(self, fullname):
         """
@@ -86,7 +87,7 @@ class DataModuleLoader(imputil.Importer):
         For now all this does is remove ast.Assign nodes that 
         are already in cache.
         """
-        new_body = skip_nodes_in_cache(code.body, cache)
+        new_body = skip_nodes_in_cache(code.body, cache, self.verbose)
         code.body = new_body
         return code
 
@@ -98,19 +99,29 @@ class DataModuleLoader(imputil.Importer):
         return mod
 
 
-def skip_nodes_in_cache(nodes, cache):
+def skip_nodes_in_cache(nodes, cache, verbose=True):
     """
     remove the assign statements that were gotten 
     from cache
     """
     new_body = []
+    skipped = []
     for node in nodes:
-        res = _skip_node(node, cache)
-        if not res:
+        skip = _skip_node(node, cache)
+        if not skip:
             new_body.append(node)
+        else:
+            skipped.append(skip)
+
+    if verbose:
+        print "Following loaded from cache: {0}".format(', '.join(skipped))
+
     return new_body
 
 def _skip_node(node, cache):
+    """
+    Return False if skipped, return the name if True
+    """
     if not isinstance(node, ast.Assign):
         return False
 
@@ -124,5 +135,4 @@ def _skip_node(node, cache):
         return False
 
     if name in cache.keys():
-        return True
-
+        return name
