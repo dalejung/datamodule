@@ -46,6 +46,7 @@ datamodule variables
 
 `DATAMODULE_ENABLED` : bool
   Must be set to True to become a datamodule
+
 `DATAMODULE_CACHE_KEY` : string
   Explicitly set a cache key. Important if using local import because datamodule defaults to the import name as cache key. If you always use fully qualified unique import names, this may not matter. i.e. `import pkg.subpkg.data` vs `import data`
 
@@ -72,3 +73,13 @@ Notes
 * A datamodule will not cache in `sys.modules`. This is so the module is re-run on every import. 
 * **datamodule** will attempt to smartly skip variables that should not be cached like modules, classes, functions, etc.
 * Only *simple global assignments* will be cached. Anything within a `for`, `with`, `if`, etc are not currently cachable. 
+
+Warning
+-------
+
+* Look, if this feels wrong you're probably not wrong. The code is fairly simple. Please read it so you know what's going on in the background.
+* Beware of `from xyz import *` in datamodules. This will flood the module namespace with variables you probably don't want to cache. If you absolutely requires this, override the `DMCache.sync` method and explicitly skip those modules. Something like this:
+```python
+if k in dir(some_star_module) and v is getattr(some_star_module, k):
+    continue
+```
