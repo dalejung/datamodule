@@ -49,9 +49,11 @@ datamodule variables
 --------------------
 
 `DATAMODULE_ENABLED` : bool
+
   Must be set to True to become a datamodule
 
 `DATAMODULE_CACHE_KEY` : string
+
   Explicitly set a cache key. Important if using local import because datamodule defaults to the import name as cache key. If you always use fully qualified unique import names, this may not matter. i.e. `import pkg.subpkg.data` vs `import data`
 
 Data Backend
