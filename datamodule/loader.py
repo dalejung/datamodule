@@ -31,7 +31,11 @@ class DataModuleLoader(imputil.Importer):
         config = _get_di_vars(code)
         # LOAD CACHE
         cache_key = self._cache_key(self.fullname, config)
+        if self.verbose:
+            print("Loading Cache {cache_key}".format(cache_key=cache_key))
         cache = self.load_cache(cache_key, config)
+        if self.verbose:
+            print("Done Loading Cache")
 
         # process the ast and remove the cache vars
         code = self.process_ast(code, config, cache)
@@ -53,7 +57,7 @@ class DataModuleLoader(imputil.Importer):
 
         # SAVE CACHE
         ns = self._clean_vars(ns)
-        cache.sync(ns)
+        cache.sync(ns, config)
         return mod
 
     def _cache_key(self, fullname, config):

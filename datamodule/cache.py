@@ -32,7 +32,7 @@ class DMCache(object):
         self.cache_key = cache_key
         self._vars = {}
 
-    def sync(self, vars):
+    def sync(self, vars, config):
         """
         Sync to caches to the new vars. For a dict backend,
         it's a simple replace. 
