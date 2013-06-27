@@ -1,5 +1,6 @@
 from datetime import datetime
 import itertools
+import contextlib
 DATAMODULE_ENABLED = True
 DATAMODULE_RANDOM = ['hello', 'random', 'datamodule', 'var']
 
@@ -29,3 +30,12 @@ func_res = func_test()
 
 class ClassTest(object):
     wooooo = 123
+
+@contextlib.contextmanager
+def local_only():
+    yield 123
+
+with local_only(), local_only() as f:
+    print locals().keys()
+    dale = 'dale'
+    booty = 123

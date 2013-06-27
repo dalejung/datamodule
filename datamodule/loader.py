@@ -7,6 +7,24 @@ from util import _get_di_vars
 
 # http://www.python.org/dev/peps/pep-0302/
 
+def _get_mname_path(fullname, path=None):
+    if '.' not in fullname:
+        return fullname, path
+
+    pkg, _, fullname = fullname.partition('.')
+    fp, path, desc = imp.find_module(pkg, path)
+    return _get_mname_path(fullname, path=[path])
+
+def _load_code(fullname, path=None):
+    mname, path = _get_mname_path(fullname)
+    fp, pathname, desc = imp.find_module(mname, path)
+    suffix, mode, type = desc
+
+    with fp:
+        source = fp.read()
+    code = ast.parse(source, pathname)
+    return code
+
 class DataModuleLoader(imputil.Importer):
     def __init__(self, fullname, path, cache_manager, verbose=True):
         self.fullname = fullname
