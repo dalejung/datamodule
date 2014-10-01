@@ -1,9 +1,11 @@
-import imputil
+import importlib
+from importlib.abc import Loader
 import ast
 import types
 import imp
+from io import IOBase
 
-from util import _get_di_vars
+from .util import _get_di_vars
 
 # http://www.python.org/dev/peps/pep-0302/
 
@@ -25,7 +27,7 @@ def _load_code(fullname, path=None):
     code = ast.parse(source, pathname)
     return code
 
-class DataModuleLoader(imputil.Importer):
+class DataModuleLoader(Loader):
     def __init__(self, fullname, path, cache_manager, verbose=True):
         self.fullname = fullname
         self.path = path
@@ -50,7 +52,7 @@ class DataModuleLoader(imputil.Importer):
         # LOAD CACHE
         cache_key = self._cache_key(self.fullname, config)
         if self.verbose:
-            print("Loading Cache {cache_key}".format(cache_key=cache_key))
+            print(("Loading Cache {cache_key}".format(cache_key=cache_key)))
         cache = self.load_cache(cache_key, config)
         if self.verbose:
             print("Done Loading Cache")
@@ -67,7 +69,7 @@ class DataModuleLoader(imputil.Importer):
         ns['__datastore__'] = cache
 
         # execute module with cache-hot namespace
-        exec code in ns
+        exec(code, ns)
         # Transfer vars to module dict. 
         # Note: The reason we executed in a dict is that 
         # mod.__dict__ comes standard with module specific vars
@@ -91,13 +93,13 @@ class DataModuleLoader(imputil.Importer):
         Dont' store variables that are things like modules, lambdas, classes, etc
         """
         SKIP_TYPES = (types.ModuleType, types.FunctionType, types.LambdaType, 
-                     types.ClassType, types.FileType)
-        vars = {k:v for k, v in vars.iteritems() 
+                     type, IOBase)
+        vars = {k:v for k, v in list(vars.items()) 
                 if not isinstance(v, SKIP_TYPES)}
         vars.pop('__builtins__', None)
         vars.pop('__datastore__', None)
         # remove DATAMODULE vars
-        for k in vars.keys():
+        for k in list(vars.keys()):
             if k.startswith('DATAMODULE_'):
                 vars.pop(k)
         return vars
@@ -136,7 +138,7 @@ def skip_nodes_in_cache(nodes, cache, verbose=True):
             skipped.append(skip)
 
     if verbose:
-        print "Following loaded from cache: {0}".format(', '.join(skipped))
+        print(("Following loaded from cache: {0}".format(', '.join(skipped))))
 
     return new_body
 
@@ -156,5 +158,5 @@ def _skip_node(node, cache):
     except:
         return False
 
-    if name in cache.keys():
+    if name in list(cache.keys()):
         return name

@@ -36,6 +36,6 @@ def local_only():
     yield 123
 
 with local_only(), local_only() as f:
-    print locals().keys()
+    print((list(locals().keys())))
     dale = 'dale'
     booty = 123

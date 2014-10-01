@@ -43,10 +43,11 @@ class DMCache(object):
         self._vars = vars
 
     def iteritems(self):
-        return self._vars.iteritems()
+        return iter(list(self._vars.items()))
+    items = iteritems
 
     def keys(self):
-        return self._vars.keys()
+        return list(self._vars.keys())
 
     def __contains__(self, key):
         return key in self._vars

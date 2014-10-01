@@ -1,7 +1,7 @@
 import imp
 import ast
 
-from util import _get_di_vars
+from .util import _get_di_vars
 
 def _is_datamodule(mname, path):
     try:

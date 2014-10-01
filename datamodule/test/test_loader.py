@@ -6,7 +6,6 @@ import ast
 
 import datamodule.loader as loader
 import datamodule.ast_tools as ast_tools
-reload(loader)
 
 fullname = 'datamodule.test.fake_data'
 path = ['/Users/datacaliber/Dropbox/Projects/trading/python/lib/datamodule/datamodule/test']
@@ -25,6 +24,6 @@ for node in withs:
     except:
         continue
     if call == 'local_only':
-        print ast_tools._get_assign_targets(node.body)
+        print((ast_tools._get_assign_targets(node.body)))
 
 w = withs[0]

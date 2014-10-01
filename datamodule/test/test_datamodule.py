@@ -1,6 +1,7 @@
 from unittest import TestCase
 import sys
 import types
+from io import IOBase
 
 import datamodule
 
@@ -33,12 +34,12 @@ cache = fd.__datastore__
 Make sure we're not caching types we mean to skip
 """
 SKIP_TYPES = (types.ModuleType, types.FunctionType, types.LambdaType, 
-             types.ClassType, types.FileType)
-for k, v in cache.iteritems():
+             type, IOBase)
+for k, v in list(cache.items()):
     assert not isinstance(v, SKIP_TYPES)
 
 # do not cache DATAMODULE_VARS
-for k, v in cache.iteritems():
+for k, v in list(cache.items()):
     assert not k.startswith('DATAMODULE_')
 
 if __name__ == '__main__':
