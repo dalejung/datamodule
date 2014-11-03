@@ -1,6 +1,8 @@
 from datetime import datetime
 import itertools
 import contextlib
+from . import fake_lib
+
 DATAMODULE_ENABLED = True
 DATAMODULE_RANDOM = ['hello', 'random', 'datamodule', 'var']
 

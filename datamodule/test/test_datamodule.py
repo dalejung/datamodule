@@ -19,6 +19,7 @@ class TestDataModule(TestCase):
         pass
 
 import datamodule.test.fake_data as fd
+assert fd._is_datamodule 
 old_ts = fd.ts
 old_nc = fd.non_caching
 import datamodule.test.fake_data as fd
@@ -26,7 +27,6 @@ import datamodule.test.fake_data as fd
 assert old_nc != fd.non_caching
 # ts should be cached
 assert old_ts is fd.ts
-assert 'datamodule.test.fake_data' not in sys.modules
 
 # grab cache
 cache = fd.__datastore__

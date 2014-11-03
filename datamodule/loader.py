@@ -1,8 +1,10 @@
 import importlib
-from importlib.abc import Loader
+from importlib import util
+from importlib._bootstrap import SourceFileLoader
 import ast
 import types
 import imp
+import sys
 from io import IOBase
 
 from .util import _get_di_vars
@@ -27,7 +29,7 @@ def _load_code(fullname, path=None):
     code = ast.parse(source, pathname)
     return code
 
-class DataModuleLoader(Loader):
+class DataModuleLoader(SourceFileLoader):
     def __init__(self, fullname, path, cache_manager, verbose=True):
         self.fullname = fullname
         self.path = path
@@ -35,20 +37,11 @@ class DataModuleLoader(Loader):
         self.mname = mname
         self.cache_manager = cache_manager
         self.verbose = verbose
+        self.config = None
 
-    def load_module(self, fullname):
-        """
-        Note:
-        -----
-        We do not cache module in sys.modules
-        """
-        mname = self.mname
-        fp, pathname, desc = imp.find_module(mname, self.path)
-        suffix, mode, type = desc
+        super().__init__(fullname, path)
 
-        source = fp.read()
-        code = ast.parse(source, pathname)
-        config = _get_di_vars(code)
+    def get_cache(self, config):
         # LOAD CACHE
         cache_key = self._cache_key(self.fullname, config)
         if self.verbose:
@@ -56,14 +49,30 @@ class DataModuleLoader(Loader):
         cache = self.load_cache(cache_key, config)
         if self.verbose:
             print("Done Loading Cache")
+        return cache
+
+    def get_code(self):
+        fullname = self.fullname
+        source_path = self.get_filename(fullname)
+        source_bytes = self.get_data(source_path)
+        code = ast.parse(source_bytes, source_path)
+
+        # get the datamodule specific config lines and grab cache
+        config = _get_di_vars(code)
+        self.config = config
+        cache = self.get_cache(config=self.config)
 
         # process the ast and remove the cache vars
         code = self.process_ast(code, config, cache)
+        code = compile(code, source_path, 'exec')
+        return code
 
-        code = compile(code, pathname, 'exec')
-        mod = self.new_module()
-        ns = {}
+    def exec_module(self, mod):
+        ns = mod.__dict__
 
+        # not get_code sets self.config
+        code = self.get_code()
+        cache = self.get_cache(config=self.config)
         # populate namespace with cache vars
         ns.update(cache)
         ns['__datastore__'] = cache
@@ -77,8 +86,10 @@ class DataModuleLoader(Loader):
 
         # SAVE CACHE
         ns = self._clean_vars(ns)
-        cache.sync(ns, config)
-        return mod
+        cache.sync(ns, self.config)
+
+        # flag for datamodule.patch._gcd_import
+        mod._is_datamodule = True
 
     def _cache_key(self, fullname, config):
         custom_key = config.get('DATAMODULE_CACHE_KEY', None)
@@ -120,6 +131,7 @@ class DataModuleLoader(Loader):
         mname = self.mname
         mod = imp.new_module(mname)
         mod.__path__ = self.path
+        mod.__name__ = self.fullname
         return mod
 
 
