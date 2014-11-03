@@ -51,8 +51,7 @@ class DataModuleLoader(SourceFileLoader):
             print("Done Loading Cache")
         return cache
 
-    def get_code(self):
-        fullname = self.fullname
+    def get_code(self, fullname):
         source_path = self.get_filename(fullname)
         source_bytes = self.get_data(source_path)
         code = ast.parse(source_bytes, source_path)
@@ -71,7 +70,7 @@ class DataModuleLoader(SourceFileLoader):
         ns = mod.__dict__
 
         # not get_code sets self.config
-        code = self.get_code()
+        code = self.get_code(self.full_name)
         cache = self.get_cache(config=self.config)
         # populate namespace with cache vars
         ns.update(cache)
