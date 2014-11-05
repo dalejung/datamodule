@@ -77,18 +77,23 @@ class DataModuleLoader(SourceFileLoader):
         ns['__datastore__'] = cache
 
         # execute module with cache-hot namespace
-        exec(code, ns)
-        # Transfer vars to module dict. 
-        # Note: The reason we executed in a dict is that 
-        # mod.__dict__ comes standard with module specific vars
-        mod.__dict__.update(ns)
+        try:
+            exec(code, ns)
+        except Exception as error:
+            print("*" * 20)
+            print(error)
+            print("*" * 20)
+        finally:
+            # Transfer vars to module dict. 
+            # Note: The reason we executed in a dict is that 
+            # mod.__dict__ comes standard with module specific vars
+            mod.__dict__.update(ns)
+            # SAVE CACHE
+            ns = self._clean_vars(ns)
+            cache.sync(ns, self.config)
 
-        # SAVE CACHE
-        ns = self._clean_vars(ns)
-        cache.sync(ns, self.config)
-
-        # flag for datamodule.patch._gcd_import
-        mod._is_datamodule = True
+            # flag for datamodule.patch._gcd_import
+            mod._is_datamodule = True
 
     def _cache_key(self, fullname, config):
         custom_key = config.get('DATAMODULE_CACHE_KEY', None)
@@ -104,10 +109,9 @@ class DataModuleLoader(SourceFileLoader):
         """
         SKIP_TYPES = (types.ModuleType, types.FunctionType, types.LambdaType, 
                      type, IOBase)
+        is_magic = lambda s: s.startswith('__') and s.endswith('__')
         vars = {k:v for k, v in list(vars.items()) 
-                if not isinstance(v, SKIP_TYPES)}
-        vars.pop('__builtins__', None)
-        vars.pop('__datastore__', None)
+                if not isinstance(v, SKIP_TYPES) and not is_magic(k)}
         # remove DATAMODULE vars
         for k in list(vars.keys()):
             if k.startswith('DATAMODULE_'):
