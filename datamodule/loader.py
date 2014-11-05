@@ -70,7 +70,7 @@ class DataModuleLoader(SourceFileLoader):
         ns = mod.__dict__
 
         # not get_code sets self.config
-        code = self.get_code(self.full_name)
+        code = self.get_code(self.fullname)
         cache = self.get_cache(config=self.config)
         # populate namespace with cache vars
         ns.update(cache)
