@@ -146,7 +146,7 @@ def skip_nodes_in_cache(nodes, cache, verbose=True):
     new_body = []
     skipped = []
     for node in nodes:
-        skip = _skip_node(node, cache)
+        skip = _is_skip_node(node, cache)
         if not skip:
             new_body.append(node)
         else:
@@ -157,7 +157,7 @@ def skip_nodes_in_cache(nodes, cache, verbose=True):
 
     return new_body
 
-def _skip_node(node, cache):
+def _is_skip_node(node, cache):
     """
     Return False if skipped, return the name if True
     """
